@@ -85,7 +85,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const API_URL = 'https://resumedoctor-production.up.railway.app/api';
+        const API_URL = 'https://resumedoctor-prod.railway.app/api';
 
         const ResumeTailorApp = () => {
             const [screen, setScreen] = React.useState('landing'); // landing, auth, app, pricing
@@ -283,26 +283,9 @@ ${questionnaire.skills}
             return (
                 <>
                     {screen === 'landing' && <LandingPage setScreen={setScreen} />}
-                    {screen === 'auth' && (
-                        <AuthScreen
-                            authMode={authMode}
-                            setAuthMode={setAuthMode}
-                            email={email}
-                            setEmail={setEmail}
-                            password={password}
-                            setPassword={setPassword}
-                            name={name}
-                            setName={setName}
-                            authError={authError}
-                            authLoading={authLoading}
-                            handleLogin={handleLogin}
-                            handleRegister={handleRegister}
-                            setScreen={setScreen}
-                        />
-                    )}
-                    {screen === 'app' && user && (
+                    {screen === 'app' && (
                         <AppScreen
-                            user={user}
+                            user={{ userId: 'demo', used: 0, limit: 999 }}
                             step={step}
                             setStep={setStep}
                             mode={mode}
@@ -321,12 +304,11 @@ ${questionnaire.skills}
                             downloadResume={downloadResume}
                             copyToClipboard={copyToClipboard}
                             resetApp={resetApp}
-                            handleLogout={handleLogout}
+                            handleLogout={() => setScreen('landing')}
                             questionnaire={questionnaire}
                             setQuestionnaire={setQuestionnaire}
                         />
                     )}
-                    {screen === 'pricing' && <PricingPage setScreen={setScreen} />}
                 </>
             );
         };
@@ -336,7 +318,6 @@ ${questionnaire.skills}
                 <nav style={styles.nav}>
                     <div style={styles.navContent}>
                         <div style={{fontSize: '20px', fontWeight: '700', letterSpacing: '-0.5px'}}>Resume Tailor</div>
-                        <button onClick={() => setScreen('auth')} style={{...styles.navButton, background: 'var(--accent)'}}>Sign In</button>
                     </div>
                 </nav>
 
@@ -356,8 +337,7 @@ ${questionnaire.skills}
                     </div>
 
                     <div style={{marginTop: '40px', display: 'flex', gap: '12px', justifyContent: 'center', animation: 'slideUp 0.8s ease-out 0.2s backwards'}}>
-                        <button onClick={() => setScreen('auth')} style={{...styles.primaryButton}}>Get Started Free</button>
-                        <button style={{...styles.secondaryButton}}>Watch Demo</button>
+                        <button onClick={() => setScreen('app')} style={{...styles.primaryButton}}>Get Started Free</button>
                     </div>
                 </div>
 
@@ -498,13 +478,25 @@ ${questionnaire.skills}
                             </div>
 
                             <div style={{marginBottom: '24px'}}>
-                                <label style={styles.label}>Job Posting</label>
+                                <label style={styles.label}>Job Posting URL (optional)</label>
+                                <input
+                                    type="text"
+                                    placeholder="https://..."
+                                    value={jobLink}
+                                    onChange={(e) => setJobLink(e.target.value)}
+                                    style={styles.input}
+                                />
+                            </div>
+
+                            <div style={{marginBottom: '24px'}}>
+                                <label style={styles.label}>Job Description *Required</label>
                                 <textarea
                                     placeholder="Paste the complete job description here..."
                                     value={jobDescription}
                                     onChange={(e) => setJobDescription(e.target.value)}
                                     style={{...styles.textarea, minHeight: '200px'}}
                                 />
+                                <p style={{fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px'}}>Paste the full job posting text, including title, description, requirements, and benefits.</p>
                             </div>
 
                             {error && <div style={{color: 'var(--error)', marginBottom: '16px', fontSize: '14px'}}>{error}</div>}
