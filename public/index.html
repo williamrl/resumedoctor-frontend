@@ -135,7 +135,8 @@
                         body: JSON.stringify({
                             userId: user.userId,
                             resumeContent,
-                            jobDescription,
+                            jobDescription: jobDescription || '',
+                            jobUrl: jobLink || '',
                             apiKey
                         })
                     });
@@ -176,6 +177,7 @@
                 setMode(null);
                 setResumeFile(null);
                 setJobDescription('');
+                setJobLink('');
                 setTailoredResume('');
                 setError('');
             };
@@ -229,7 +231,7 @@
                             downloadResume={downloadResume}
                             copyToClipboard={copyToClipboard}
                             resetApp={resetApp}
-                            handleLogout={() => { setUser(null); setEmail(''); setPassword(''); setName(''); setScreen('landing'); }}
+                            handleLogout={() => { setUser(null); setEmail(''); setPassword(''); setName(''); setApiKey(''); setScreen('landing'); }}
                         />
                     )}
                 </>
@@ -294,7 +296,7 @@
                 <div style={styles.authCard}>
                     <h1 style={{fontSize: '24px', fontWeight: '700', marginBottom: '8px', textAlign: 'center'}}>Add Your Claude API Key</h1>
                     <p style={{color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', marginBottom: '30px'}}>
-                        This allows us to read job postings directly
+                        This allows us to tailor your resumes
                     </p>
                     <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
                         <div>
@@ -313,7 +315,7 @@
                         </button>
                     </div>
                     <p style={{fontSize: '12px', color: 'var(--text-secondary)', marginTop: '20px', textAlign: 'center'}}>
-                        Your API key is only used in your browser.
+                        Your API key is only used in your browser and never stored on our servers.
                     </p>
                 </div>
             </div>
@@ -360,9 +362,43 @@
                                 <textarea placeholder="Or paste job description here..." value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} style={{...styles.textarea, minHeight: '150px'}} />
                             </div>
                             {error && <div style={{color: 'var(--error)', marginBottom: '16px', fontSize: '14px'}}>{error}</div>}
-                            <button onClick={tailorResume} disabled={!resumeFile || loading} style={{...styles.primaryButton, opacity: !resumeFile ? 0.5 : 1}}>
+                            <button onClick={tailorResume} disabled={!resumeFile || (!(jobLink || jobDescription)) || loading} style={{...styles.primaryButton, opacity: !resumeFile || (!(jobLink || jobDescription)) ? 0.5 : 1}}>
                                 {loading ? 'Tailoring...' : 'Tailor Resume'}
                             </button>
+                        </div>
+                    </div>
+                )}
+                {step === 'input' && mode === 'build' && (
+                    <div style={styles.appContent}>
+                        <div style={{maxWidth: '600px', margin: '0 auto'}}>
+                            <button onClick={() => setMode(null)} style={styles.backButton}>← Back</button>
+                            <h2 style={{fontSize: '24px', fontWeight: '700', marginBottom: '24px'}}>Build Your Resume</h2>
+                            <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
+                                <div>
+                                    <label style={styles.label}>Full Name</label>
+                                    <input type="text" placeholder="Your name" style={styles.input} />
+                                </div>
+                                <div>
+                                    <label style={styles.label}>Email</label>
+                                    <input type="email" placeholder="your@email.com" style={styles.input} />
+                                </div>
+                                <div>
+                                    <label style={styles.label}>Skills</label>
+                                    <textarea placeholder="Python, JavaScript, React..." style={styles.textarea} />
+                                </div>
+                                <div>
+                                    <label style={styles.label}>Job Posting URL</label>
+                                    <input type="text" placeholder="https://..." value={jobLink} onChange={(e) => setJobLink(e.target.value)} style={styles.input} />
+                                </div>
+                                <div>
+                                    <label style={styles.label}>Job Description (optional)</label>
+                                    <textarea placeholder="Or paste job description here..." value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} style={{...styles.textarea, minHeight: '150px'}} />
+                                </div>
+                                {error && <div style={{color: 'var(--error)', fontSize: '14px'}}>{error}</div>}
+                                <button onClick={tailorResume} disabled={!(jobLink || jobDescription) || loading} style={{...styles.primaryButton, opacity: !(jobLink || jobDescription) ? 0.5 : 1}}>
+                                    {loading ? 'Creating...' : 'Generate & Tailor Resume'}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
