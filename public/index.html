@@ -291,35 +291,68 @@
             </div>
         );
 
-        const ApiKeyScreen = ({ apiKey, setApiKey, apiKeyError, setApiKeyError, onContinue }) => (
-            <div style={styles.authContainer}>
-                <div style={styles.authCard}>
-                    <h1 style={{fontSize: '24px', fontWeight: '700', marginBottom: '8px', textAlign: 'center'}}>Add Your Claude API Key</h1>
-                    <p style={{color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', marginBottom: '30px'}}>
-                        This allows us to tailor your resumes
-                    </p>
-                    <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
-                        <div>
-                            <label style={styles.label}>Claude API Key</label>
-                            <p style={{fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px'}}>
-                                Get your key from <a href="https://console.anthropic.com/account/keys" target="_blank" rel="noopener noreferrer" style={{color: 'var(--accent)'}}>console.anthropic.com</a>
-                            </p>
-                            <input type="password" placeholder="sk-ant-..." value={apiKey} onChange={(e) => { setApiKey(e.target.value); setApiKeyError(''); }} style={styles.authInput} />
+        const ApiKeyScreen = ({ apiKey, setApiKey, apiKeyError, setApiKeyError, onContinue }) => {
+            const [validating, setValidating] = React.useState(false);
+
+            const handleValidate = async () => {
+                if (!apiKey) { 
+                    setApiKeyError('Please enter your API key'); 
+                    return; 
+                }
+
+                setValidating(true);
+                setApiKeyError('');
+
+                try {
+                    const response = await fetch(`${API_URL}/validate-key`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ apiKey })
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        setApiKeyError(data.error || 'Invalid API key');
+                        setValidating(false);
+                        return;
+                    }
+
+                    setValidating(false);
+                    onContinue();
+                } catch (err) {
+                    setApiKeyError('Error validating key. Please try again.');
+                    setValidating(false);
+                }
+            };
+
+            return (
+                <div style={styles.authContainer}>
+                    <div style={styles.authCard}>
+                        <h1 style={{fontSize: '24px', fontWeight: '700', marginBottom: '8px', textAlign: 'center'}}>Add Your Claude API Key</h1>
+                        <p style={{color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', marginBottom: '30px'}}>
+                            This allows us to tailor your resumes
+                        </p>
+                        <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
+                            <div>
+                                <label style={styles.label}>Claude API Key</label>
+                                <p style={{fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px'}}>
+                                    Get your key from <a href="https://console.anthropic.com/account/keys" target="_blank" rel="noopener noreferrer" style={{color: 'var(--accent)'}}>console.anthropic.com</a>
+                                </p>
+                                <input type="password" placeholder="sk-ant-..." value={apiKey} onChange={(e) => { setApiKey(e.target.value); setApiKeyError(''); }} style={styles.authInput} />
+                            </div>
+                            {apiKeyError && <div style={{color: 'var(--error)', fontSize: '14px'}}>{apiKeyError}</div>}
+                            <button onClick={handleValidate} disabled={validating} style={styles.primaryButton}>
+                                {validating ? 'Validating...' : 'Continue'}
+                            </button>
                         </div>
-                        {apiKeyError && <div style={{color: 'var(--error)', fontSize: '14px'}}>{apiKeyError}</div>}
-                        <button onClick={() => {
-                            if (!apiKey) { setApiKeyError('Please enter your API key'); return; }
-                            onContinue();
-                        }} style={styles.primaryButton}>
-                            Continue
-                        </button>
+                        <p style={{fontSize: '12px', color: 'var(--text-secondary)', marginTop: '20px', textAlign: 'center'}}>
+                            Your API key is only used in your browser and never stored on our servers.
+                        </p>
                     </div>
-                    <p style={{fontSize: '12px', color: 'var(--text-secondary)', marginTop: '20px', textAlign: 'center'}}>
-                        Your API key is only used in your browser and never stored on our servers.
-                    </p>
                 </div>
-            </div>
-        );
+            );
+        };
 
         const AppScreen = ({ user, step, setStep, mode, setMode, resumeFile, setResumeFile, jobLink, setJobLink, jobDescription, setJobDescription, tailoredResume, loading, error, setError, tailorResume, downloadResume, copyToClipboard, resetApp, handleLogout }) => (
             <div style={styles.appContainer}>
