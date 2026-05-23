@@ -7,6 +7,7 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://js.stripe.com/v3/"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -30,13 +31,6 @@
         }
         #root { min-height: 100vh; }
         input, textarea, button { font-family: inherit; }
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        input[type=number] { -moz-appearance: textfield; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -44,23 +38,18 @@
 
     <script type="text/babel">
         const API_URL = 'https://resumedoctor-production.up.railway.app/api';
+        const stripe = Stripe('pk_live_51TZbUX2STsB7bGsyfQvvIIFEWGF66Gg7f8AKcB1tXudnMx0dGtD3H3KrXFY5TYptdhWbGy2O2nKezwxcXd1wcupQ00HbyfiDV3');
 
         const ResumeTailorApp = () => {
             const [screen, setScreen] = React.useState('landing');
             const [user, setUser] = React.useState(null);
             
-            // Auth
             const [email, setEmail] = React.useState('');
             const [password, setPassword] = React.useState('');
             const [name, setName] = React.useState('');
             const [authError, setAuthError] = React.useState('');
             const [authLoading, setAuthLoading] = React.useState(false);
             
-            // API Key
-            const [apiKey, setApiKey] = React.useState('');
-            const [apiKeyError, setApiKeyError] = React.useState('');
-            
-            // Resume
             const [step, setStep] = React.useState('input');
             const [mode, setMode] = React.useState(null);
             const [resumeFile, setResumeFile] = React.useState(null);
@@ -69,6 +58,18 @@
             const [tailoredResume, setTailoredResume] = React.useState('');
             const [loading, setLoading] = React.useState(false);
             const [error, setError] = React.useState('');
+            
+            const [showPayment, setShowPayment] = React.useState(false);
+            const [paymentLoading, setPaymentLoading] = React.useState(false);
+
+            React.useEffect(() => {
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('payment') === 'success' && user) {
+                  fetch(`${API_URL}/user/${user.userId}/tailors`)
+                    .then(r => r.json())
+                    .then(data => setUser({ ...user, tailorsAvailable: data.tailorsAvailable }));
+                }
+            }, [user]);
 
             const handleRegister = async (e) => {
                 e.preventDefault();
@@ -87,7 +88,7 @@
                         return;
                     }
                     setUser(data);
-                    setScreen('apikey');
+                    setScreen('app');
                     setAuthLoading(false);
                 } catch (err) {
                     setAuthError('Connection error. Please try again.');
@@ -112,7 +113,7 @@
                         return;
                     }
                     setUser(data);
-                    setScreen('apikey');
+                    setScreen('app');
                     setAuthLoading(false);
                 } catch (err) {
                     setAuthError('Connection error. Please try again.');
@@ -120,7 +121,40 @@
                 }
             };
 
+            const handlePayment = async () => {
+                setPaymentLoading(true);
+                try {
+                    const response = await fetch(`${API_URL}/create-checkout`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: user.userId })
+                    });
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        setError(data.error || 'Payment setup failed');
+                        setPaymentLoading(false);
+                        return;
+                    }
+
+                    const result = await stripe.redirectToCheckout({ sessionId: data.sessionId });
+                    
+                    if (result.error) {
+                        setError(result.error.message);
+                    }
+                    setPaymentLoading(false);
+                } catch (err) {
+                    setError('Payment error. Please try again.');
+                    setPaymentLoading(false);
+                }
+            };
+
             const tailorResume = async () => {
+                if (user.tailorsAvailable <= 0) {
+                    setShowPayment(true);
+                    return;
+                }
+
                 setLoading(true);
                 setError('');
                 try {
@@ -136,8 +170,7 @@
                             userId: user.userId,
                             resumeContent,
                             jobDescription: jobDescription || '',
-                            jobUrl: jobLink || '',
-                            apiKey
+                            jobUrl: jobLink || ''
                         })
                     });
 
@@ -149,6 +182,7 @@
                     }
 
                     setTailoredResume(data.tailoredResume);
+                    setUser({ ...user, tailorsAvailable: data.tailorsRemaining });
                     setStep('result');
                     setLoading(false);
                 } catch (err) {
@@ -180,6 +214,7 @@
                 setJobLink('');
                 setTailoredResume('');
                 setError('');
+                setShowPayment(false);
             };
 
             return (
@@ -199,15 +234,6 @@
                             handleLogin={handleLogin}
                             handleRegister={handleRegister}
                             setScreen={setScreen}
-                        />
-                    )}
-                    {screen === 'apikey' && user && (
-                        <ApiKeyScreen
-                            apiKey={apiKey}
-                            setApiKey={setApiKey}
-                            apiKeyError={apiKeyError}
-                            setApiKeyError={setApiKeyError}
-                            onContinue={() => setScreen('app')}
                         />
                     )}
                     {screen === 'app' && user && (
@@ -231,7 +257,11 @@
                             downloadResume={downloadResume}
                             copyToClipboard={copyToClipboard}
                             resetApp={resetApp}
-                            handleLogout={() => { setUser(null); setEmail(''); setPassword(''); setName(''); setApiKey(''); setScreen('landing'); }}
+                            handleLogout={() => { setUser(null); setEmail(''); setPassword(''); setName(''); setScreen('landing'); }}
+                            showPayment={showPayment}
+                            setShowPayment={setShowPayment}
+                            handlePayment={handlePayment}
+                            paymentLoading={paymentLoading}
                         />
                     )}
                 </>
@@ -291,77 +321,41 @@
             </div>
         );
 
-        const ApiKeyScreen = ({ apiKey, setApiKey, apiKeyError, setApiKeyError, onContinue }) => {
-            const [validating, setValidating] = React.useState(false);
-
-            const handleValidate = async () => {
-                if (!apiKey) { 
-                    setApiKeyError('Please enter your API key'); 
-                    return; 
-                }
-
-                setValidating(true);
-                setApiKeyError('');
-
-                try {
-                    const response = await fetch(`${API_URL}/validate-key`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ apiKey })
-                    });
-
-                    const data = await response.json();
-
-                    if (!response.ok) {
-                        setApiKeyError(data.error || 'Invalid API key');
-                        setValidating(false);
-                        return;
-                    }
-
-                    setValidating(false);
-                    onContinue();
-                } catch (err) {
-                    setApiKeyError('Error validating key. Please try again.');
-                    setValidating(false);
-                }
-            };
-
-            return (
-                <div style={styles.authContainer}>
-                    <div style={styles.authCard}>
-                        <h1 style={{fontSize: '24px', fontWeight: '700', marginBottom: '8px', textAlign: 'center'}}>Add Your Claude API Key</h1>
-                        <p style={{color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', marginBottom: '30px'}}>
-                            This allows us to tailor your resumes
-                        </p>
-                        <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
-                            <div>
-                                <label style={styles.label}>Claude API Key</label>
-                                <p style={{fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px'}}>
-                                    Get your key from <a href="https://console.anthropic.com/account/keys" target="_blank" rel="noopener noreferrer" style={{color: 'var(--accent)'}}>console.anthropic.com</a>
-                                </p>
-                                <input type="password" placeholder="sk-ant-..." value={apiKey} onChange={(e) => { setApiKey(e.target.value); setApiKeyError(''); }} style={styles.authInput} />
-                            </div>
-                            {apiKeyError && <div style={{color: 'var(--error)', fontSize: '14px'}}>{apiKeyError}</div>}
-                            <button onClick={handleValidate} disabled={validating} style={styles.primaryButton}>
-                                {validating ? 'Validating...' : 'Continue'}
-                            </button>
-                        </div>
-                        <p style={{fontSize: '12px', color: 'var(--text-secondary)', marginTop: '20px', textAlign: 'center'}}>
-                            Your API key is only used in your browser and never stored on our servers.
-                        </p>
-                    </div>
-                </div>
-            );
-        };
-
-        const AppScreen = ({ user, step, setStep, mode, setMode, resumeFile, setResumeFile, jobLink, setJobLink, jobDescription, setJobDescription, tailoredResume, loading, error, setError, tailorResume, downloadResume, copyToClipboard, resetApp, handleLogout }) => (
+        const AppScreen = ({ user, step, setStep, mode, setMode, resumeFile, setResumeFile, jobLink, setJobLink, jobDescription, setJobDescription, tailoredResume, loading, error, setError, tailorResume, downloadResume, copyToClipboard, resetApp, handleLogout, showPayment, setShowPayment, handlePayment, paymentLoading }) => (
             <div style={styles.appContainer}>
                 <header style={styles.header}>
                     <div style={styles.headerContent}>
                         <div style={{fontSize: '18px', fontWeight: '700'}}>Resume Tailor</div>
-                        <button onClick={handleLogout} style={{...styles.navButton, color: 'var(--text-secondary)'}}>Sign Out</button>
+                        <div style={{display: 'flex', alignItems: 'center', gap: '20px'}}>
+                            <div style={{fontSize: '13px', color: 'var(--text-secondary)'}}>
+                                {user.tailorsAvailable} tailor{user.tailorsAvailable !== 1 ? 's' : ''} available
+                            </div>
+                            <button onClick={handleLogout} style={{...styles.navButton, color: 'var(--text-secondary)'}}>Sign Out</button>
+                        </div>
                     </div>
                 </header>
+
+                {showPayment && (
+                    <div style={styles.paymentOverlay}>
+                        <div style={styles.paymentCard}>
+                            <h2 style={{fontSize: '24px', fontWeight: '700', marginBottom: '16px', textAlign: 'center'}}>Tailor Your Resume</h2>
+                            <p style={{color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '24px'}}>
+                                Get one resume tailor instantly.
+                            </p>
+                            <div style={{background: 'var(--bg-secondary)', padding: '20px', borderRadius: '8px', marginBottom: '24px', textAlign: 'center'}}>
+                                <div style={{fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px'}}>Per Resume Tailor</div>
+                                <div style={{fontSize: '32px', fontWeight: '700'}}>$6.99</div>
+                            </div>
+                            <button onClick={handlePayment} disabled={paymentLoading} style={styles.primaryButton}>
+                                {paymentLoading ? 'Processing...' : 'Buy 1 Tailor'}
+                            </button>
+                            <button onClick={() => setShowPayment(false)} style={{marginTop: '12px', width: '100%', padding: '12px', background: 'transparent', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '14px'}}>
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {step === 'input' && !mode && (
                     <div style={styles.appContent}>
                         <div style={{maxWidth: '600px', margin: '0 auto'}}>
@@ -396,7 +390,7 @@
                             </div>
                             {error && <div style={{color: 'var(--error)', marginBottom: '16px', fontSize: '14px'}}>{error}</div>}
                             <button onClick={tailorResume} disabled={!resumeFile || (!(jobLink || jobDescription)) || loading} style={{...styles.primaryButton, opacity: !resumeFile || (!(jobLink || jobDescription)) ? 0.5 : 1}}>
-                                {loading ? 'Tailoring...' : 'Tailor Resume'}
+                                {loading ? 'Tailoring...' : user.tailorsAvailable > 0 ? 'Tailor Resume' : 'Buy & Tailor'}
                             </button>
                         </div>
                     </div>
@@ -429,7 +423,7 @@
                                 </div>
                                 {error && <div style={{color: 'var(--error)', fontSize: '14px'}}>{error}</div>}
                                 <button onClick={tailorResume} disabled={!(jobLink || jobDescription) || loading} style={{...styles.primaryButton, opacity: !(jobLink || jobDescription) ? 0.5 : 1}}>
-                                    {loading ? 'Creating...' : 'Generate & Tailor Resume'}
+                                    {loading ? 'Creating...' : user.tailorsAvailable > 0 ? 'Generate & Tailor' : 'Buy & Generate'}
                                 </button>
                             </div>
                         </div>
@@ -484,6 +478,8 @@
             header: { padding: '20px 0', borderBottom: '1px solid var(--border)', background: 'rgba(10, 14, 39, 0.8)', backdropFilter: 'blur(10px)' },
             headerContent: { maxWidth: '1200px', margin: '0 auto', padding: '0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
             appContent: { flex: 1, padding: '40px 20px', maxWidth: '1200px', margin: '0 auto', width: '100%' },
+            paymentOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
+            paymentCard: { width: '100%', maxWidth: '400px', padding: '40px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '12px' },
             label: { display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-secondary)' },
             input: { width: '100%', padding: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '14px' },
             textarea: { width: '100%', padding: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'monospace', resize: 'vertical' },
