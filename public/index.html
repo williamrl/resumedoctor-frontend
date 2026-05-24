@@ -51,9 +51,7 @@
             const [authLoading, setAuthLoading] = React.useState(false);
             
             const [step, setStep] = React.useState('input');
-            const [mode, setMode] = React.useState(null);
             const [resumeFile, setResumeFile] = React.useState(null);
-            const [jobLink, setJobLink] = React.useState('');
             const [jobDescription, setJobDescription] = React.useState('');
             const [tailoredResume, setTailoredResume] = React.useState('');
             const [loading, setLoading] = React.useState(false);
@@ -155,23 +153,27 @@
                     return;
                 }
 
+                if (!resumeFile) {
+                    setError('Please upload a resume file.');
+                    return;
+                }
+
+                if (!jobDescription || jobDescription.trim().length < 50) {
+                    setError('Please provide a job description (minimum 50 characters).');
+                    return;
+                }
+
                 setLoading(true);
                 setError('');
                 try {
-                    let resumeContent = '';
-                    if (resumeFile) {
-                        resumeContent = await resumeFile.text();
-                    }
+                    const formData = new FormData();
+                    formData.append('resume', resumeFile);
+                    formData.append('userId', user.userId);
+                    formData.append('jobDescription', jobDescription);
 
                     const response = await fetch(`${API_URL}/tailor-resume`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            userId: user.userId,
-                            resumeContent,
-                            jobDescription: jobDescription || '',
-                            jobUrl: jobLink || ''
-                        })
+                        body: formData
                     });
 
                     const data = await response.json();
@@ -208,10 +210,8 @@
 
             const resetApp = () => {
                 setStep('input');
-                setMode(null);
                 setResumeFile(null);
                 setJobDescription('');
-                setJobLink('');
                 setTailoredResume('');
                 setError('');
                 setShowPayment(false);
@@ -241,12 +241,8 @@
                             user={user}
                             step={step}
                             setStep={setStep}
-                            mode={mode}
-                            setMode={setMode}
                             resumeFile={resumeFile}
                             setResumeFile={setResumeFile}
-                            jobLink={jobLink}
-                            setJobLink={setJobLink}
                             jobDescription={jobDescription}
                             setJobDescription={setJobDescription}
                             tailoredResume={tailoredResume}
@@ -321,7 +317,7 @@
             </div>
         );
 
-        const AppScreen = ({ user, step, setStep, mode, setMode, resumeFile, setResumeFile, jobLink, setJobLink, jobDescription, setJobDescription, tailoredResume, loading, error, setError, tailorResume, downloadResume, copyToClipboard, resetApp, handleLogout, showPayment, setShowPayment, handlePayment, paymentLoading }) => (
+        const AppScreen = ({ user, step, setStep, resumeFile, setResumeFile, jobDescription, setJobDescription, tailoredResume, loading, error, setError, tailorResume, downloadResume, copyToClipboard, resetApp, handleLogout, showPayment, setShowPayment, handlePayment, paymentLoading }) => (
             <div style={styles.appContainer}>
                 <header style={styles.header}>
                     <div style={styles.headerContent}>
@@ -356,22 +352,10 @@
                     </div>
                 )}
 
-                {step === 'input' && !mode && (
+                {step === 'input' && (
                     <div style={styles.appContent}>
                         <div style={{maxWidth: '600px', margin: '0 auto'}}>
-                            <h2 style={{fontSize: '28px', fontWeight: '700', marginBottom: '40px'}}>Get Started</h2>
-                            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px'}}>
-                                <Card icon="📄" title="Upload Resume" desc="Have a resume ready?" onClick={() => setMode('upload')} />
-                                <Card icon="✍️" title="Build Resume" desc="Create one from scratch" onClick={() => setMode('build')} />
-                            </div>
-                        </div>
-                    </div>
-                )}
-                {step === 'input' && mode === 'upload' && (
-                    <div style={styles.appContent}>
-                        <div style={{maxWidth: '600px', margin: '0 auto'}}>
-                            <button onClick={() => setMode(null)} style={styles.backButton}>← Back</button>
-                            <h2 style={{fontSize: '24px', fontWeight: '700', marginBottom: '24px'}}>Upload Your Resume</h2>
+                            <h2 style={{fontSize: '28px', fontWeight: '700', marginBottom: '40px'}}>Upload Your Resume</h2>
                             <div style={{marginBottom: '24px'}}>
                                 <label style={styles.label}>Resume File</label>
                                 <div style={styles.uploadArea}>
@@ -381,51 +365,13 @@
                                 {resumeFile && <p style={{marginTop: '8px', color: 'var(--success)'}}>✓ {resumeFile.name}</p>}
                             </div>
                             <div style={{marginBottom: '24px'}}>
-                                <label style={styles.label}>Job Posting URL</label>
-                                <input type="text" placeholder="https://..." value={jobLink} onChange={(e) => setJobLink(e.target.value)} style={styles.input} />
-                            </div>
-                            <div style={{marginBottom: '24px'}}>
-                                <label style={styles.label}>Job Description (optional)</label>
-                                <textarea placeholder="Or paste job description here..." value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} style={{...styles.textarea, minHeight: '150px'}} />
+                                <label style={styles.label}>Job Description</label>
+                                <textarea placeholder="Paste the full job description here..." value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} style={{...styles.textarea, minHeight: '150px'}} />
                             </div>
                             {error && <div style={{color: 'var(--error)', marginBottom: '16px', fontSize: '14px'}}>{error}</div>}
-                            <button onClick={tailorResume} disabled={!resumeFile || (!(jobLink || jobDescription)) || loading} style={{...styles.primaryButton, opacity: !resumeFile || (!(jobLink || jobDescription)) ? 0.5 : 1}}>
+                            <button onClick={tailorResume} disabled={!resumeFile || !jobDescription || loading} style={{...styles.primaryButton, opacity: !resumeFile || !jobDescription ? 0.5 : 1}}>
                                 {loading ? 'Tailoring...' : user.tailorsAvailable > 0 ? 'Tailor Resume' : 'Buy & Tailor'}
                             </button>
-                        </div>
-                    </div>
-                )}
-                {step === 'input' && mode === 'build' && (
-                    <div style={styles.appContent}>
-                        <div style={{maxWidth: '600px', margin: '0 auto'}}>
-                            <button onClick={() => setMode(null)} style={styles.backButton}>← Back</button>
-                            <h2 style={{fontSize: '24px', fontWeight: '700', marginBottom: '24px'}}>Build Your Resume</h2>
-                            <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
-                                <div>
-                                    <label style={styles.label}>Full Name</label>
-                                    <input type="text" placeholder="Your name" style={styles.input} />
-                                </div>
-                                <div>
-                                    <label style={styles.label}>Email</label>
-                                    <input type="email" placeholder="your@email.com" style={styles.input} />
-                                </div>
-                                <div>
-                                    <label style={styles.label}>Skills</label>
-                                    <textarea placeholder="Python, JavaScript, React..." style={styles.textarea} />
-                                </div>
-                                <div>
-                                    <label style={styles.label}>Job Posting URL</label>
-                                    <input type="text" placeholder="https://..." value={jobLink} onChange={(e) => setJobLink(e.target.value)} style={styles.input} />
-                                </div>
-                                <div>
-                                    <label style={styles.label}>Job Description (optional)</label>
-                                    <textarea placeholder="Or paste job description here..." value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} style={{...styles.textarea, minHeight: '150px'}} />
-                                </div>
-                                {error && <div style={{color: 'var(--error)', fontSize: '14px'}}>{error}</div>}
-                                <button onClick={tailorResume} disabled={!(jobLink || jobDescription) || loading} style={{...styles.primaryButton, opacity: !(jobLink || jobDescription) ? 0.5 : 1}}>
-                                    {loading ? 'Creating...' : user.tailorsAvailable > 0 ? 'Generate & Tailor' : 'Buy & Generate'}
-                                </button>
-                            </div>
                         </div>
                     </div>
                 )}
@@ -445,14 +391,6 @@
             </div>
         );
 
-        const Card = ({ icon, title, desc, onClick }) => (
-            <div onClick={onClick} style={{padding: '24px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '8px', cursor: 'pointer', textAlign: 'center'}} onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; }}>
-                <div style={{fontSize: '32px', marginBottom: '12px'}}>{icon}</div>
-                <div style={{fontWeight: '600', marginBottom: '6px'}}>{title}</div>
-                <div style={{fontSize: '13px', color: 'var(--text-secondary)'}}>{desc}</div>
-            </div>
-        );
-
         const Feature = ({ icon, title, desc }) => (
             <div style={{padding: '24px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '8px', textAlign: 'center'}}>
                 <div style={{fontSize: '32px', marginBottom: '12px'}}>{icon}</div>
@@ -469,7 +407,7 @@
             hero: { flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '60px 20px', textAlign: 'center' },
             heroTitle: { fontSize: '52px', fontWeight: '700', marginBottom: '16px', background: 'linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', color: 'transparent' },
             heroSubtitle: { fontSize: '18px', color: 'var(--text-secondary)', marginBottom: '40px' },
-            primaryButton: { padding: '12px 24px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' },
+            primaryButton: { padding: '12px 24px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px', marginTop: '16px' },
             features: { maxWidth: '1200px', margin: '0 auto', padding: '80px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', width: '100%' },
             authContainer: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' },
             authCard: { width: '100%', maxWidth: '400px', padding: '40px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '12px' },
@@ -481,11 +419,9 @@
             paymentOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
             paymentCard: { width: '100%', maxWidth: '400px', padding: '40px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '12px' },
             label: { display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-secondary)' },
-            input: { width: '100%', padding: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '14px' },
             textarea: { width: '100%', padding: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'monospace', resize: 'vertical' },
             uploadArea: { border: '2px dashed var(--border)', borderRadius: '8px', padding: '30px', textAlign: 'center', cursor: 'pointer' },
-            resumePreview: { padding: '20px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '8px', maxHeight: '400px', overflowY: 'auto', fontSize: '13px', lineHeight: '1.6', fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-word' },
-            backButton: { marginBottom: '24px', padding: '8px 16px', background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-secondary)', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }
+            resumePreview: { padding: '20px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '8px', maxHeight: '400px', overflowY: 'auto', fontSize: '13px', lineHeight: '1.6', fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
