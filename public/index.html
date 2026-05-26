@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resume Tailor — Instantly Tailored Resumes</title>
+    <title>Resume Tailor — AI-Powered Resume Optimization</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -11,26 +14,134 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --bg-primary: #0a0e27;
-            --bg-secondary: #141829;
-            --bg-tertiary: #1a1f3a;
-            --text-primary: #f5f7fa;
-            --text-secondary: #a1aac8;
-            --accent: #6366f1;
-            --accent-hover: #4f46e5;
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #141414;
+            --bg-tertiary: #1c1c1c;
+            --bg-elevated: #242424;
+            --text-primary: #ffffff;
+            --text-secondary: #a8a8a8;
+            --text-muted: #6b6b6b;
+            --accent: #dc2626;
+            --accent-hover: #b91c1c;
+            --accent-glow: rgba(220, 38, 38, 0.15);
+            --accent-soft: rgba(220, 38, 38, 0.08);
             --success: #10b981;
             --error: #ef4444;
-            --border: #252d47;
+            --border: #2a2a2a;
+            --border-light: #333333;
         }
-        html, body { margin: 0; padding: 0; height: 100%; }
+        html, body { 
+            margin: 0; 
+            padding: 0; 
+            height: 100%; 
+            scroll-behavior: smooth;
+        }
         body {
-            font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1535 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
             color: var(--text-primary);
             line-height: 1.6;
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
-        #root { min-height: 100vh; }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse at top left, var(--accent-glow) 0%, transparent 40%),
+                radial-gradient(ellipse at bottom right, rgba(220, 38, 38, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        #root { 
+            min-height: 100vh; 
+            position: relative;
+            z-index: 1;
+        }
         input, textarea, button { font-family: inherit; }
+        
+        button {
+            transition: all 0.2s ease;
+        }
+        button:hover:not(:disabled) {
+            transform: translateY(-1px);
+        }
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        input, textarea {
+            transition: all 0.2s ease;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-light);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .fade-in {
+            animation: fadeIn 0.4s ease-out;
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #ffffff 0%, #a8a8a8 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .accent-gradient {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
     </style>
 </head>
 <body>
@@ -219,7 +330,6 @@
 
             const copyToClipboard = () => {
                 navigator.clipboard.writeText(tailoredResume);
-                alert('Resume copied to clipboard!');
             };
 
             const resetApp = () => {
@@ -284,168 +394,1117 @@
             <div style={styles.landingContainer}>
                 <nav style={styles.nav}>
                     <div style={styles.navContent}>
-                        <div style={{fontSize: '20px', fontWeight: '700'}}>Resume Tailor</div>
-                        <button onClick={() => setScreen('signin')} style={styles.navButton}>Sign In</button>
+                        <div style={styles.logo}>
+                            <div style={styles.logoIcon}>RT</div>
+                            <span style={styles.logoText}>Resume Tailor</span>
+                        </div>
+                        <div style={{display: 'flex', gap: '12px', alignItems: 'center'}}>
+                            <button onClick={() => setScreen('signin')} style={styles.navButtonGhost}>Sign In</button>
+                            <button onClick={() => setScreen('signup')} style={styles.navButtonPrimary}>Get Started</button>
+                        </div>
                     </div>
                 </nav>
-                <div style={styles.hero}>
-                    <h1 style={styles.heroTitle}>Your Resume, Tailored Perfectly</h1>
-                    <p style={styles.heroSubtitle}>In seconds. For every job. Every time.</p>
-                    <button onClick={() => setScreen('signup')} style={styles.primaryButton}>Get Started Free</button>
+                
+                <div style={styles.hero} className="fade-in">
+                    <div style={styles.heroBadge}>
+                        <span style={{color: 'var(--accent)', marginRight: '6px'}}>●</span>
+                        Powered by Google Gemini
+                    </div>
+                    <h1 style={styles.heroTitle}>
+                        Land Your Dream Job
+                        <br />
+                        <span style={styles.heroTitleAccent}>In Seconds.</span>
+                    </h1>
+                    <p style={styles.heroSubtitle}>
+                        AI-powered resume tailoring that transforms your generic resume into a 
+                        perfectly optimized application for every job you want.
+                    </p>
+                    <div style={styles.heroCta}>
+                        <button onClick={() => setScreen('signup')} style={styles.heroPrimaryButton}>
+                            Start Tailoring Now
+                            <span style={{marginLeft: '8px'}}>→</span>
+                        </button>
+                        <button onClick={() => setScreen('signin')} style={styles.heroSecondaryButton}>
+                            Sign In
+                        </button>
+                    </div>
+                    <p style={styles.heroNote}>No subscription required • Pay per resume • Instant results</p>
                 </div>
-                <div style={styles.features}>
-                    <Feature icon="⚡" title="Instant Tailoring" desc="Transform your resume in seconds" />
-                    <Feature icon="🎯" title="Keyword Matching" desc="Optimized for ATS systems" />
-                    <Feature icon="🔐" title="Secure & Private" desc="Your data stays with you" />
-                    <Feature icon="✨" title="AI-Powered" desc="Powered by Google Gemini" />
+                
+                <div style={styles.featuresSection}>
+                    <div style={styles.featuresHeader}>
+                        <h2 style={styles.sectionTitle}>Why Resume Tailor?</h2>
+                        <p style={styles.sectionSubtitle}>Built for professionals who want results, not generic templates.</p>
+                    </div>
+                    <div style={styles.features}>
+                        <Feature 
+                            icon="⚡" 
+                            title="Instant Results" 
+                            desc="Get a professionally tailored resume in under 30 seconds." 
+                        />
+                        <Feature 
+                            icon="🎯" 
+                            title="ATS Optimized" 
+                            desc="Keywords matched to beat applicant tracking systems every time." 
+                        />
+                        <Feature 
+                            icon="🔐" 
+                            title="Private & Secure" 
+                            desc="Your data is never stored or shared. Period." 
+                        />
+                        <Feature 
+                            icon="✨" 
+                            title="AI-Powered" 
+                            desc="Cutting-edge Google Gemini AI tailors every word for you." 
+                        />
+                    </div>
                 </div>
+                
+                <div style={styles.howItWorks}>
+                    <h2 style={styles.sectionTitle}>How It Works</h2>
+                    <div style={styles.steps}>
+                        <Step number="01" title="Upload Resume" desc="Drop your existing PDF, DOCX, or TXT file." />
+                        <Step number="02" title="Paste Job" desc="Copy and paste the job description you're targeting." />
+                        <Step number="03" title="Download" desc="Get your tailored, ATS-optimized resume PDF." />
+                    </div>
+                </div>
+                
+                <div style={styles.ctaSection}>
+                    <h2 style={styles.ctaTitle}>Ready to stand out?</h2>
+                    <p style={styles.ctaSubtitle}>Join professionals landing more interviews with tailored resumes.</p>
+                    <button onClick={() => setScreen('signup')} style={styles.heroPrimaryButton}>
+                        Get Started Free
+                        <span style={{marginLeft: '8px'}}>→</span>
+                    </button>
+                </div>
+                
+                <footer style={styles.footer}>
+                    <div style={styles.footerContent}>
+                        <div style={styles.logo}>
+                            <div style={styles.logoIcon}>RT</div>
+                            <span style={styles.logoText}>Resume Tailor</span>
+                        </div>
+                        <p style={styles.footerText}>© 2026 Resume Tailor. AI-powered resume optimization.</p>
+                    </div>
+                </footer>
             </div>
         );
 
         const AuthScreen = ({ isSignup, email, setEmail, password, setPassword, name, setName, authError, authLoading, handleLogin, handleRegister, setScreen }) => (
             <div style={styles.authContainer}>
-                <div style={styles.authCard}>
-                    <h1 style={{fontSize: '24px', fontWeight: '700', marginBottom: '8px', textAlign: 'center'}}>Resume Tailor</h1>
-                    <p style={{color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', marginBottom: '30px'}}>
-                        {isSignup ? 'Create your account' : 'Sign in to your account'}
-                    </p>
-                    <form onSubmit={isSignup ? handleRegister : handleLogin} style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
+                <div style={styles.authCard} className="fade-in">
+                    <div style={{textAlign: 'center', marginBottom: '32px'}}>
+                        <div style={{...styles.logoIcon, margin: '0 auto 16px', width: '48px', height: '48px', fontSize: '18px'}}>RT</div>
+                        <h1 style={styles.authTitle}>
+                            {isSignup ? 'Create Account' : 'Welcome Back'}
+                        </h1>
+                        <p style={styles.authSubtitle}>
+                            {isSignup ? 'Start tailoring resumes in seconds' : 'Sign in to continue'}
+                        </p>
+                    </div>
+                    
+                    <form onSubmit={isSignup ? handleRegister : handleLogin} style={{display: 'flex', flexDirection: 'column', gap: '14px'}}>
                         {isSignup && (
-                            <input type="text" placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} style={styles.authInput} />
+                            <div>
+                                <label style={styles.authLabel}>Full Name</label>
+                                <input 
+                                    type="text" 
+                                    placeholder="John Doe" 
+                                    value={name} 
+                                    onChange={(e) => setName(e.target.value)} 
+                                    style={styles.authInput} 
+                                    required
+                                />
+                            </div>
                         )}
-                        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} style={styles.authInput} />
-                        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} style={styles.authInput} />
-                        {authError && <div style={{color: 'var(--error)', fontSize: '14px'}}>{authError}</div>}
+                        <div>
+                            <label style={styles.authLabel}>Email</label>
+                            <input 
+                                type="email" 
+                                placeholder="you@example.com" 
+                                value={email} 
+                                onChange={(e) => setEmail(e.target.value)} 
+                                style={styles.authInput} 
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label style={styles.authLabel}>Password</label>
+                            <input 
+                                type="password" 
+                                placeholder="••••••••" 
+                                value={password} 
+                                onChange={(e) => setPassword(e.target.value)} 
+                                style={styles.authInput} 
+                                required
+                            />
+                        </div>
+                        
+                        {authError && (
+                            <div style={styles.errorMessage}>
+                                {authError}
+                            </div>
+                        )}
+                        
                         <button type="submit" disabled={authLoading} style={styles.primaryButton}>
-                            {authLoading ? 'Loading...' : isSignup ? 'Create Account' : 'Sign In'}
+                            {authLoading && <span className="spinner"></span>}
+                            {authLoading ? 'Please wait...' : isSignup ? 'Create Account' : 'Sign In'}
                         </button>
                     </form>
-                    <div style={{textAlign: 'center', marginTop: '20px', fontSize: '14px', color: 'var(--text-secondary)'}}>
-                        {isSignup ? 'Already have one? ' : "Don't have an account? "}
-                        <span onClick={() => setScreen(isSignup ? 'signin' : 'signup')} style={{color: 'var(--accent)', cursor: 'pointer', fontWeight: '600'}}>
+                    
+                    <div style={styles.authSwitch}>
+                        {isSignup ? 'Already have an account? ' : "Don't have an account? "}
+                        <span 
+                            onClick={() => setScreen(isSignup ? 'signin' : 'signup')} 
+                            style={styles.authSwitchLink}
+                        >
                             {isSignup ? 'Sign in' : 'Sign up'}
                         </span>
                     </div>
-                    <button onClick={() => setScreen('landing')} style={{marginTop: '20px', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', width: '100%', textDecoration: 'underline'}}>
+                    
+                    <button 
+                        onClick={() => setScreen('landing')} 
+                        style={styles.authBackButton}
+                    >
                         ← Back to home
                     </button>
                 </div>
             </div>
         );
 
-        const AppScreen = ({ user, step, setStep, resumeFile, setResumeFile, jobDescription, setJobDescription, tailoredResume, pdfBase64, loading, error, setError, tailorResume, downloadPDF, copyToClipboard, resetApp, handleLogout, showPayment, setShowPayment, handlePayment, paymentLoading }) => (
-            <div style={styles.appContainer}>
-                <header style={styles.header}>
-                    <div style={styles.headerContent}>
-                        <div style={{fontSize: '18px', fontWeight: '700'}}>Resume Tailor</div>
-                        <div style={{display: 'flex', alignItems: 'center', gap: '20px'}}>
-                            <div style={{fontSize: '13px', color: 'var(--text-secondary)'}}>
-                                {user.tailorsAvailable} tailor{user.tailorsAvailable !== 1 ? 's' : ''} available
+        const AppScreen = ({ user, step, setStep, resumeFile, setResumeFile, jobDescription, setJobDescription, tailoredResume, pdfBase64, loading, error, setError, tailorResume, downloadPDF, copyToClipboard, resetApp, handleLogout, showPayment, setShowPayment, handlePayment, paymentLoading }) => {
+            const [copied, setCopied] = React.useState(false);
+            
+            const handleCopy = () => {
+                copyToClipboard();
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            };
+            
+            return (
+                <div style={styles.appContainer}>
+                    <header style={styles.header}>
+                        <div style={styles.headerContent}>
+                            <div style={styles.logo}>
+                                <div style={styles.logoIcon}>RT</div>
+                                <span style={styles.logoText}>Resume Tailor</span>
                             </div>
-                            <button onClick={handleLogout} style={{...styles.navButton, color: 'var(--text-secondary)'}}>Sign Out</button>
-                        </div>
-                    </div>
-                </header>
-
-                {showPayment && (
-                    <div style={styles.paymentOverlay}>
-                        <div style={styles.paymentCard}>
-                            <h2 style={{fontSize: '24px', fontWeight: '700', marginBottom: '16px', textAlign: 'center'}}>Tailor Your Resume</h2>
-                            <p style={{color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '24px'}}>
-                                Get one resume tailor instantly.
-                            </p>
-                            <div style={{background: 'var(--bg-secondary)', padding: '20px', borderRadius: '8px', marginBottom: '24px', textAlign: 'center'}}>
-                                <div style={{fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px'}}>Per Resume Tailor</div>
-                                <div style={{fontSize: '32px', fontWeight: '700'}}>$6.99</div>
-                            </div>
-                            <button onClick={handlePayment} disabled={paymentLoading} style={styles.primaryButton}>
-                                {paymentLoading ? 'Processing...' : 'Buy 1 Tailor'}
-                            </button>
-                            <button onClick={() => setShowPayment(false)} style={{marginTop: '12px', width: '100%', padding: '12px', background: 'transparent', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '14px'}}>
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {step === 'input' && (
-                    <div style={styles.appContent}>
-                        <div style={{maxWidth: '600px', margin: '0 auto'}}>
-                            <h2 style={{fontSize: '28px', fontWeight: '700', marginBottom: '40px'}}>Upload Your Resume</h2>
-                            <div style={{marginBottom: '24px'}}>
-                                <label style={styles.label}>Resume File</label>
-                                <div style={styles.uploadArea}>
-                                    <input type="file" accept=".pdf,.doc,.docx,.txt" onChange={(e) => setResumeFile(e.target.files[0])} style={{cursor: 'pointer'}} />
-                                    <p style={{marginTop: '12px', color: 'var(--text-secondary)', fontSize: '13px'}}>PDF, Word, or text file</p>
+                            <div style={{display: 'flex', alignItems: 'center', gap: '16px'}}>
+                                <div style={styles.tailorBadge}>
+                                    <span style={{color: 'var(--accent)', marginRight: '6px'}}>●</span>
+                                    {user.tailorsAvailable} {user.tailorsAvailable !== 1 ? 'tailors' : 'tailor'} left
                                 </div>
-                                {resumeFile && <p style={{marginTop: '8px', color: 'var(--success)'}}>✓ {resumeFile.name}</p>}
+                                <button onClick={handleLogout} style={styles.signOutButton}>Sign Out</button>
                             </div>
-                            <div style={{marginBottom: '24px'}}>
-                                <label style={styles.label}>Job Description</label>
-                                <textarea placeholder="Paste the full job description here..." value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} style={{...styles.textarea, minHeight: '150px'}} />
-                            </div>
-                            {error && <div style={{color: 'var(--error)', marginBottom: '16px', fontSize: '14px'}}>{error}</div>}
-                            <button onClick={tailorResume} disabled={!resumeFile || !jobDescription || loading} style={{...styles.primaryButton, opacity: !resumeFile || !jobDescription ? 0.5 : 1}}>
-                                {loading ? 'Tailoring...' : user.tailorsAvailable > 0 ? 'Tailor Resume' : 'Buy & Tailor'}
-                            </button>
                         </div>
-                    </div>
-                )}
-                
-                {step === 'result' && (
-                    <div style={styles.appContent}>
-                        <div style={{maxWidth: '900px', margin: '0 auto'}}>
-                            <h2 style={{fontSize: '24px', fontWeight: '700', marginBottom: '24px'}}>Your Tailored Resume</h2>
-                            {pdfBase64 && (
-                                <div style={{marginBottom: '24px', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', background: 'white', boxShadow: '0 10px 25px rgba(0,0,0,0.2)'}}>
-                                    <iframe 
-                                        src={`data:application/pdf;base64,${pdfBase64}`}
-                                        style={{width: '100%', height: '700px', border: 'none'}}
-                                        title="Resume Preview"
-                                    />
+                    </header>
+
+                    {showPayment && (
+                        <div style={styles.paymentOverlay} className="fade-in">
+                            <div style={styles.paymentCard}>
+                                <div style={{textAlign: 'center', marginBottom: '24px'}}>
+                                    <div style={{...styles.logoIcon, margin: '0 auto 16px', width: '56px', height: '56px', fontSize: '22px'}}>$</div>
+                                    <h2 style={styles.paymentTitle}>Get a Resume Tailor</h2>
+                                    <p style={styles.paymentSubtitle}>
+                                        Instant AI-powered resume optimization
+                                    </p>
                                 </div>
-                            )}
-                            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginTop: '24px'}}>
-                                <button onClick={downloadPDF} style={{...styles.primaryButton, marginTop: '0'}}>Download PDF</button>
-                                <button onClick={copyToClipboard} style={{...styles.primaryButton, marginTop: '0'}}>Copy Text</button>
-                                <button onClick={resetApp} style={{...styles.primaryButton, marginTop: '0'}}>New Resume</button>
+                                
+                                <div style={styles.priceBox}>
+                                    <div style={styles.priceLabel}>One Resume Tailor</div>
+                                    <div style={styles.priceAmount}>$6.99</div>
+                                    <div style={styles.priceNote}>One-time payment • No subscription</div>
+                                </div>
+                                
+                                <div style={styles.priceFeatures}>
+                                    <div style={styles.priceFeature}>
+                                        <span style={{color: 'var(--accent)', marginRight: '8px'}}>✓</span>
+                                        ATS-optimized resume
+                                    </div>
+                                    <div style={styles.priceFeature}>
+                                        <span style={{color: 'var(--accent)', marginRight: '8px'}}>✓</span>
+                                        Professional PDF download
+                                    </div>
+                                    <div style={styles.priceFeature}>
+                                        <span style={{color: 'var(--accent)', marginRight: '8px'}}>✓</span>
+                                        Instant results
+                                    </div>
+                                </div>
+                                
+                                <button onClick={handlePayment} disabled={paymentLoading} style={styles.primaryButton}>
+                                    {paymentLoading && <span className="spinner"></span>}
+                                    {paymentLoading ? 'Processing...' : 'Buy Now — $6.99'}
+                                </button>
+                                <button onClick={() => setShowPayment(false)} style={styles.cancelButton}>
+                                    Cancel
+                                </button>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
+
+                    {step === 'input' && (
+                        <div style={styles.appContent} className="fade-in">
+                            <div style={{maxWidth: '720px', margin: '0 auto'}}>
+                                <div style={{textAlign: 'center', marginBottom: '40px'}}>
+                                    <h1 style={styles.appTitle}>Tailor Your Resume</h1>
+                                    <p style={styles.appSubtitle}>
+                                        Upload your resume and paste the job description. We'll do the rest.
+                                    </p>
+                                </div>
+                                
+                                <div style={styles.formCard}>
+                                    <div style={{marginBottom: '28px'}}>
+                                        <label style={styles.label}>
+                                            <span style={styles.labelNumber}>1</span>
+                                            Upload Your Resume
+                                        </label>
+                                        <div style={{...styles.uploadArea, ...(resumeFile ? styles.uploadAreaActive : {})}}>
+                                            <input 
+                                                type="file" 
+                                                accept=".pdf,.doc,.docx,.txt" 
+                                                onChange={(e) => setResumeFile(e.target.files[0])} 
+                                                style={styles.fileInput}
+                                                id="resume-upload"
+                                            />
+                                            <label htmlFor="resume-upload" style={styles.uploadLabel}>
+                                                {resumeFile ? (
+                                                    <>
+                                                        <div style={styles.uploadIconSuccess}>✓</div>
+                                                        <div style={styles.uploadTextActive}>{resumeFile.name}</div>
+                                                        <div style={styles.uploadHint}>Click to change file</div>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <div style={styles.uploadIcon}>↑</div>
+                                                        <div style={styles.uploadText}>Drop your resume here</div>
+                                                        <div style={styles.uploadHint}>PDF, DOCX, or TXT • Max 10MB</div>
+                                                    </>
+                                                )}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style={{marginBottom: '24px'}}>
+                                        <label style={styles.label}>
+                                            <span style={styles.labelNumber}>2</span>
+                                            Paste Job Description
+                                        </label>
+                                        <textarea 
+                                            placeholder="Paste the full job description here. Include requirements, responsibilities, and qualifications for best results..." 
+                                            value={jobDescription} 
+                                            onChange={(e) => setJobDescription(e.target.value)} 
+                                            style={styles.textarea} 
+                                        />
+                                        <div style={styles.charCount}>
+                                            {jobDescription.length} characters {jobDescription.length < 50 && jobDescription.length > 0 && '(minimum 50)'}
+                                        </div>
+                                    </div>
+                                    
+                                    {error && (
+                                        <div style={styles.errorMessage}>
+                                            {error}
+                                        </div>
+                                    )}
+                                    
+                                    <button 
+                                        onClick={tailorResume} 
+                                        disabled={!resumeFile || !jobDescription || loading} 
+                                        style={{
+                                            ...styles.primaryButton,
+                                            width: '100%',
+                                            padding: '16px',
+                                            fontSize: '15px'
+                                        }}
+                                    >
+                                        {loading && <span className="spinner"></span>}
+                                        {loading ? 'Tailoring Your Resume...' : user.tailorsAvailable > 0 ? '✨ Tailor My Resume' : 'Buy & Tailor — $6.99'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {step === 'result' && (
+                        <div style={styles.appContent} className="fade-in">
+                            <div style={{maxWidth: '960px', margin: '0 auto'}}>
+                                <div style={styles.resultHeader}>
+                                    <div>
+                                        <h1 style={styles.appTitle}>Your Tailored Resume</h1>
+                                        <p style={styles.appSubtitle}>Optimized and ready to download</p>
+                                    </div>
+                                </div>
+                                
+                                {pdfBase64 && (
+                                    <div style={styles.pdfPreview}>
+                                        <iframe 
+                                            src={`data:application/pdf;base64,${pdfBase64}`}
+                                            style={styles.pdfFrame}
+                                            title="Resume Preview"
+                                        />
+                                    </div>
+                                )}
+                                
+                                <div style={styles.resultActions}>
+                                    <button onClick={downloadPDF} style={styles.primaryActionButton}>
+                                        <span style={{marginRight: '8px'}}>↓</span>
+                                        Download PDF
+                                    </button>
+                                    <button onClick={handleCopy} style={styles.secondaryActionButton}>
+                                        <span style={{marginRight: '8px'}}>{copied ? '✓' : '⎘'}</span>
+                                        {copied ? 'Copied!' : 'Copy Text'}
+                                    </button>
+                                    <button onClick={resetApp} style={styles.tertiaryActionButton}>
+                                        <span style={{marginRight: '8px'}}>+</span>
+                                        New Resume
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const Feature = ({ icon, title, desc }) => (
+            <div style={styles.featureCard}>
+                <div style={styles.featureIcon}>{icon}</div>
+                <div style={styles.featureTitle}>{title}</div>
+                <div style={styles.featureDesc}>{desc}</div>
             </div>
         );
 
-        const Feature = ({ icon, title, desc }) => (
-            <div style={{padding: '24px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '8px', textAlign: 'center'}}>
-                <div style={{fontSize: '32px', marginBottom: '12px'}}>{icon}</div>
-                <div style={{fontWeight: '600', marginBottom: '6px'}}>{title}</div>
-                <div style={{fontSize: '14px', color: 'var(--text-secondary)'}}>{desc}</div>
+        const Step = ({ number, title, desc }) => (
+            <div style={styles.stepCard}>
+                <div style={styles.stepNumber}>{number}</div>
+                <div style={styles.stepTitle}>{title}</div>
+                <div style={styles.stepDesc}>{desc}</div>
             </div>
         );
 
         const styles = {
-            landingContainer: { minHeight: '100vh', display: 'flex', flexDirection: 'column' },
-            nav: { padding: '20px 0', borderBottom: '1px solid var(--border)', background: 'rgba(10, 14, 39, 0.8)', backdropFilter: 'blur(10px)' },
-            navContent: { maxWidth: '1200px', margin: '0 auto', padding: '0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-            navButton: { padding: '8px 16px', background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-primary)', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' },
-            hero: { flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '60px 20px', textAlign: 'center' },
-            heroTitle: { fontSize: '52px', fontWeight: '700', marginBottom: '16px', background: 'linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', color: 'transparent' },
-            heroSubtitle: { fontSize: '18px', color: 'var(--text-secondary)', marginBottom: '40px' },
-            primaryButton: { padding: '12px 24px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px', marginTop: '16px' },
-            features: { maxWidth: '1200px', margin: '0 auto', padding: '80px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', width: '100%' },
-            authContainer: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' },
-            authCard: { width: '100%', maxWidth: '400px', padding: '40px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '12px' },
-            authInput: { width: '100%', padding: '12px', background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '14px' },
-            appContainer: { minHeight: '100vh', display: 'flex', flexDirection: 'column' },
-            header: { padding: '20px 0', borderBottom: '1px solid var(--border)', background: 'rgba(10, 14, 39, 0.8)', backdropFilter: 'blur(10px)' },
-            headerContent: { maxWidth: '1200px', margin: '0 auto', padding: '0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-            appContent: { flex: 1, padding: '40px 20px', maxWidth: '1200px', margin: '0 auto', width: '100%' },
-            paymentOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
-            paymentCard: { width: '100%', maxWidth: '400px', padding: '40px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '12px' },
-            label: { display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-secondary)' },
-            textarea: { width: '100%', padding: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'monospace', resize: 'vertical' },
-            uploadArea: { border: '2px dashed var(--border)', borderRadius: '8px', padding: '30px', textAlign: 'center', cursor: 'pointer' }
+            // === LANDING PAGE ===
+            landingContainer: { 
+                minHeight: '100vh', 
+                display: 'flex', 
+                flexDirection: 'column' 
+            },
+            
+            // === NAV ===
+            nav: { 
+                padding: '20px 0', 
+                borderBottom: '1px solid var(--border)', 
+                background: 'rgba(10, 10, 10, 0.85)', 
+                backdropFilter: 'blur(20px)',
+                position: 'sticky',
+                top: 0,
+                zIndex: 100
+            },
+            navContent: { 
+                maxWidth: '1200px', 
+                margin: '0 auto', 
+                padding: '0 24px', 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center' 
+            },
+            logo: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+            },
+            logoIcon: {
+                width: '36px',
+                height: '36px',
+                background: 'linear-gradient(135deg, var(--accent) 0%, #991b1b 100%)',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: '800',
+                fontSize: '14px',
+                color: 'white',
+                letterSpacing: '-0.5px',
+                boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)'
+            },
+            logoText: {
+                fontSize: '17px', 
+                fontWeight: '700',
+                letterSpacing: '-0.3px'
+            },
+            navButtonGhost: { 
+                padding: '9px 16px', 
+                background: 'transparent', 
+                border: 'none', 
+                color: 'var(--text-secondary)', 
+                borderRadius: '8px', 
+                cursor: 'pointer', 
+                fontSize: '14px', 
+                fontWeight: '500' 
+            },
+            navButtonPrimary: {
+                padding: '9px 18px',
+                background: 'var(--accent)',
+                border: 'none',
+                color: 'white',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                boxShadow: '0 2px 8px rgba(220, 38, 38, 0.25)'
+            },
+            
+            // === HERO ===
+            hero: { 
+                flex: 1, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                padding: '100px 24px 80px', 
+                textAlign: 'center',
+                maxWidth: '900px',
+                margin: '0 auto'
+            },
+            heroBadge: {
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '6px 14px',
+                background: 'var(--accent-soft)',
+                border: '1px solid var(--accent-glow)',
+                borderRadius: '100px',
+                fontSize: '13px',
+                fontWeight: '500',
+                color: 'var(--text-secondary)',
+                marginBottom: '24px'
+            },
+            heroTitle: { 
+                fontSize: 'clamp(40px, 6vw, 72px)', 
+                fontWeight: '800', 
+                marginBottom: '24px', 
+                letterSpacing: '-2px',
+                lineHeight: '1.05',
+                color: 'var(--text-primary)'
+            },
+            heroTitleAccent: {
+                background: 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+            },
+            heroSubtitle: { 
+                fontSize: '19px', 
+                color: 'var(--text-secondary)', 
+                marginBottom: '40px',
+                maxWidth: '600px',
+                lineHeight: '1.6',
+                fontWeight: '400'
+            },
+            heroCta: {
+                display: 'flex',
+                gap: '12px',
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+                marginBottom: '20px'
+            },
+            heroPrimaryButton: {
+                padding: '15px 28px',
+                background: 'linear-gradient(135deg, var(--accent) 0%, #991b1b 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '10px',
+                fontSize: '15px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                boxShadow: '0 8px 24px rgba(220, 38, 38, 0.35)',
+                display: 'inline-flex',
+                alignItems: 'center'
+            },
+            heroSecondaryButton: {
+                padding: '15px 28px',
+                background: 'var(--bg-elevated)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-light)',
+                borderRadius: '10px',
+                fontSize: '15px',
+                fontWeight: '600',
+                cursor: 'pointer'
+            },
+            heroNote: {
+                fontSize: '13px',
+                color: 'var(--text-muted)',
+                marginTop: '8px'
+            },
+            
+            // === FEATURES ===
+            featuresSection: {
+                padding: '80px 24px',
+                maxWidth: '1200px',
+                margin: '0 auto',
+                width: '100%'
+            },
+            featuresHeader: {
+                textAlign: 'center',
+                marginBottom: '60px'
+            },
+            sectionTitle: {
+                fontSize: 'clamp(28px, 4vw, 42px)',
+                fontWeight: '700',
+                marginBottom: '12px',
+                letterSpacing: '-1px'
+            },
+            sectionSubtitle: {
+                fontSize: '17px',
+                color: 'var(--text-secondary)',
+                fontWeight: '400'
+            },
+            features: { 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
+                gap: '20px'
+            },
+            featureCard: {
+                padding: '32px 24px', 
+                background: 'var(--bg-secondary)', 
+                border: '1px solid var(--border)', 
+                borderRadius: '14px', 
+                textAlign: 'left',
+                transition: 'all 0.3s ease'
+            },
+            featureIcon: {
+                fontSize: '28px', 
+                marginBottom: '16px',
+                width: '48px',
+                height: '48px',
+                background: 'var(--accent-soft)',
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            },
+            featureTitle: {
+                fontWeight: '700', 
+                marginBottom: '8px',
+                fontSize: '17px',
+                letterSpacing: '-0.3px'
+            },
+            featureDesc: {
+                fontSize: '14px', 
+                color: 'var(--text-secondary)',
+                lineHeight: '1.6'
+            },
+            
+            // === HOW IT WORKS ===
+            howItWorks: {
+                padding: '80px 24px',
+                maxWidth: '1200px',
+                margin: '0 auto',
+                width: '100%',
+                textAlign: 'center'
+            },
+            steps: {
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                gap: '24px',
+                marginTop: '50px'
+            },
+            stepCard: {
+                padding: '32px 24px',
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border)',
+                borderRadius: '14px',
+                textAlign: 'left'
+            },
+            stepNumber: {
+                fontSize: '32px',
+                fontWeight: '800',
+                background: 'linear-gradient(135deg, var(--accent) 0%, #991b1b 100%)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                marginBottom: '12px',
+                letterSpacing: '-1px'
+            },
+            stepTitle: {
+                fontSize: '18px',
+                fontWeight: '700',
+                marginBottom: '8px',
+                letterSpacing: '-0.3px'
+            },
+            stepDesc: {
+                fontSize: '14px',
+                color: 'var(--text-secondary)',
+                lineHeight: '1.6'
+            },
+            
+            // === CTA SECTION ===
+            ctaSection: {
+                textAlign: 'center',
+                padding: '100px 24px',
+                background: 'linear-gradient(180deg, transparent 0%, var(--accent-soft) 100%)',
+                margin: '40px 24px',
+                borderRadius: '20px',
+                border: '1px solid var(--border)'
+            },
+            ctaTitle: {
+                fontSize: 'clamp(32px, 4vw, 48px)',
+                fontWeight: '800',
+                marginBottom: '16px',
+                letterSpacing: '-1.5px'
+            },
+            ctaSubtitle: {
+                fontSize: '18px',
+                color: 'var(--text-secondary)',
+                marginBottom: '32px'
+            },
+            
+            // === FOOTER ===
+            footer: {
+                padding: '40px 24px',
+                borderTop: '1px solid var(--border)',
+                background: 'var(--bg-secondary)'
+            },
+            footerContent: {
+                maxWidth: '1200px',
+                margin: '0 auto',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '20px'
+            },
+            footerText: {
+                fontSize: '13px',
+                color: 'var(--text-muted)'
+            },
+            
+            // === AUTH ===
+            authContainer: { 
+                minHeight: '100vh', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                padding: '24px' 
+            },
+            authCard: { 
+                width: '100%', 
+                maxWidth: '420px', 
+                padding: '40px', 
+                background: 'var(--bg-secondary)', 
+                border: '1px solid var(--border)', 
+                borderRadius: '16px',
+                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)'
+            },
+            authTitle: {
+                fontSize: '26px',
+                fontWeight: '700',
+                marginBottom: '8px',
+                letterSpacing: '-0.5px'
+            },
+            authSubtitle: {
+                color: 'var(--text-secondary)',
+                fontSize: '14px'
+            },
+            authLabel: {
+                display: 'block',
+                fontSize: '13px',
+                fontWeight: '500',
+                color: 'var(--text-secondary)',
+                marginBottom: '6px'
+            },
+            authInput: { 
+                width: '100%', 
+                padding: '12px 14px', 
+                background: 'var(--bg-tertiary)', 
+                border: '1px solid var(--border-light)', 
+                borderRadius: '8px', 
+                color: 'var(--text-primary)', 
+                fontSize: '14px',
+                fontWeight: '400'
+            },
+            authSwitch: {
+                textAlign: 'center', 
+                marginTop: '24px', 
+                fontSize: '14px', 
+                color: 'var(--text-secondary)'
+            },
+            authSwitchLink: {
+                color: 'var(--accent)', 
+                cursor: 'pointer', 
+                fontWeight: '600',
+                textDecoration: 'none'
+            },
+            authBackButton: {
+                marginTop: '20px', 
+                color: 'var(--text-muted)', 
+                background: 'none', 
+                border: 'none', 
+                cursor: 'pointer', 
+                fontSize: '13px', 
+                width: '100%',
+                padding: '8px'
+            },
+            
+            // === APP ===
+            appContainer: { 
+                minHeight: '100vh', 
+                display: 'flex', 
+                flexDirection: 'column' 
+            },
+            header: { 
+                padding: '16px 0', 
+                borderBottom: '1px solid var(--border)', 
+                background: 'rgba(10, 10, 10, 0.85)', 
+                backdropFilter: 'blur(20px)',
+                position: 'sticky',
+                top: 0,
+                zIndex: 100
+            },
+            headerContent: { 
+                maxWidth: '1200px', 
+                margin: '0 auto', 
+                padding: '0 24px', 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center' 
+            },
+            tailorBadge: {
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '6px 12px',
+                background: 'var(--accent-soft)',
+                border: '1px solid var(--accent-glow)',
+                borderRadius: '100px',
+                fontSize: '13px',
+                fontWeight: '500',
+                color: 'var(--text-secondary)'
+            },
+            signOutButton: {
+                padding: '8px 14px',
+                background: 'transparent',
+                border: '1px solid var(--border-light)',
+                color: 'var(--text-secondary)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '500'
+            },
+            appContent: { 
+                flex: 1, 
+                padding: '48px 24px', 
+                maxWidth: '1200px', 
+                margin: '0 auto', 
+                width: '100%' 
+            },
+            appTitle: {
+                fontSize: 'clamp(28px, 4vw, 40px)',
+                fontWeight: '800',
+                marginBottom: '8px',
+                letterSpacing: '-1px'
+            },
+            appSubtitle: {
+                fontSize: '16px',
+                color: 'var(--text-secondary)',
+                fontWeight: '400'
+            },
+            
+            // === FORM CARD ===
+            formCard: {
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border)',
+                borderRadius: '16px',
+                padding: '32px'
+            },
+            label: { 
+                display: 'flex', 
+                alignItems: 'center',
+                fontSize: '14px', 
+                fontWeight: '600', 
+                marginBottom: '12px', 
+                color: 'var(--text-primary)'
+            },
+            labelNumber: {
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '22px',
+                height: '22px',
+                background: 'var(--accent)',
+                color: 'white',
+                borderRadius: '50%',
+                fontSize: '11px',
+                fontWeight: '700',
+                marginRight: '10px'
+            },
+            
+            // === UPLOAD ===
+            uploadArea: { 
+                border: '2px dashed var(--border-light)', 
+                borderRadius: '12px', 
+                padding: '40px 20px', 
+                textAlign: 'center', 
+                cursor: 'pointer',
+                background: 'var(--bg-tertiary)',
+                transition: 'all 0.2s ease'
+            },
+            uploadAreaActive: {
+                borderColor: 'var(--accent)',
+                background: 'var(--accent-soft)'
+            },
+            fileInput: {
+                position: 'absolute',
+                opacity: 0,
+                pointerEvents: 'none',
+                width: '0',
+                height: '0'
+            },
+            uploadLabel: {
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                cursor: 'pointer'
+            },
+            uploadIcon: {
+                fontSize: '32px',
+                color: 'var(--text-muted)',
+                marginBottom: '12px',
+                width: '56px',
+                height: '56px',
+                background: 'var(--bg-elevated)',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: '700'
+            },
+            uploadIconSuccess: {
+                fontSize: '24px',
+                color: 'white',
+                marginBottom: '12px',
+                width: '56px',
+                height: '56px',
+                background: 'var(--accent)',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: '700'
+            },
+            uploadText: {
+                fontSize: '15px',
+                fontWeight: '600',
+                color: 'var(--text-primary)',
+                marginBottom: '4px'
+            },
+            uploadTextActive: {
+                fontSize: '15px',
+                fontWeight: '600',
+                color: 'var(--accent)',
+                marginBottom: '4px'
+            },
+            uploadHint: {
+                fontSize: '13px',
+                color: 'var(--text-muted)'
+            },
+            
+            // === TEXTAREA ===
+            textarea: { 
+                width: '100%', 
+                padding: '14px', 
+                background: 'var(--bg-tertiary)', 
+                border: '1px solid var(--border-light)', 
+                borderRadius: '10px', 
+                color: 'var(--text-primary)', 
+                fontSize: '14px', 
+                fontFamily: 'JetBrains Mono, monospace', 
+                resize: 'vertical',
+                minHeight: '180px',
+                lineHeight: '1.6'
+            },
+            charCount: {
+                fontSize: '12px',
+                color: 'var(--text-muted)',
+                marginTop: '6px',
+                textAlign: 'right'
+            },
+            
+            // === BUTTONS ===
+            primaryButton: { 
+                padding: '13px 24px', 
+                background: 'linear-gradient(135deg, var(--accent) 0%, #991b1b 100%)', 
+                color: '#fff', 
+                border: 'none', 
+                borderRadius: '10px', 
+                fontWeight: '600', 
+                cursor: 'pointer', 
+                fontSize: '14px',
+                boxShadow: '0 4px 14px rgba(220, 38, 38, 0.3)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100%'
+            },
+            
+            // === ERROR ===
+            errorMessage: {
+                padding: '12px 16px',
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                borderRadius: '8px',
+                color: 'var(--error)',
+                fontSize: '13px',
+                marginBottom: '16px'
+            },
+            
+            // === PAYMENT ===
+            paymentOverlay: { 
+                position: 'fixed', 
+                top: 0, 
+                left: 0, 
+                right: 0, 
+                bottom: 0, 
+                background: 'rgba(0,0,0,0.85)', 
+                backdropFilter: 'blur(8px)',
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                zIndex: 1000,
+                padding: '24px'
+            },
+            paymentCard: { 
+                width: '100%', 
+                maxWidth: '440px', 
+                padding: '40px', 
+                background: 'var(--bg-secondary)', 
+                border: '1px solid var(--border)', 
+                borderRadius: '16px',
+                boxShadow: '0 30px 80px rgba(0, 0, 0, 0.7)'
+            },
+            paymentTitle: {
+                fontSize: '24px',
+                fontWeight: '700',
+                marginBottom: '6px',
+                letterSpacing: '-0.5px'
+            },
+            paymentSubtitle: {
+                color: 'var(--text-secondary)',
+                fontSize: '14px'
+            },
+            priceBox: {
+                background: 'var(--bg-tertiary)',
+                border: '1px solid var(--border-light)',
+                padding: '24px',
+                borderRadius: '12px',
+                marginBottom: '24px',
+                textAlign: 'center'
+            },
+            priceLabel: {
+                fontSize: '13px',
+                color: 'var(--text-muted)',
+                marginBottom: '8px',
+                fontWeight: '500',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+            },
+            priceAmount: {
+                fontSize: '48px',
+                fontWeight: '800',
+                background: 'linear-gradient(135deg, var(--accent) 0%, #ef4444 100%)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                marginBottom: '4px',
+                letterSpacing: '-1px'
+            },
+            priceNote: {
+                fontSize: '12px',
+                color: 'var(--text-muted)'
+            },
+            priceFeatures: {
+                marginBottom: '24px'
+            },
+            priceFeature: {
+                display: 'flex',
+                alignItems: 'center',
+                padding: '8px 0',
+                fontSize: '14px',
+                color: 'var(--text-secondary)'
+            },
+            cancelButton: {
+                marginTop: '12px', 
+                width: '100%', 
+                padding: '12px', 
+                background: 'transparent', 
+                border: '1px solid var(--border-light)', 
+                borderRadius: '8px', 
+                color: 'var(--text-secondary)', 
+                cursor: 'pointer', 
+                fontSize: '14px',
+                fontWeight: '500'
+            },
+            
+            // === RESULT ===
+            resultHeader: {
+                marginBottom: '24px'
+            },
+            pdfPreview: {
+                marginBottom: '24px', 
+                border: '1px solid var(--border)', 
+                borderRadius: '14px', 
+                overflow: 'hidden', 
+                background: 'white', 
+                boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
+            },
+            pdfFrame: {
+                width: '100%', 
+                height: '750px', 
+                border: 'none',
+                display: 'block'
+            },
+            resultActions: {
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', 
+                gap: '12px'
+            },
+            primaryActionButton: {
+                padding: '14px 20px',
+                background: 'linear-gradient(135deg, var(--accent) 0%, #991b1b 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '10px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontSize: '14px',
+                boxShadow: '0 4px 14px rgba(220, 38, 38, 0.3)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            },
+            secondaryActionButton: {
+                padding: '14px 20px',
+                background: 'var(--bg-elevated)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-light)',
+                borderRadius: '10px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontSize: '14px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            },
+            tertiaryActionButton: {
+                padding: '14px 20px',
+                background: 'transparent',
+                color: 'var(--text-secondary)',
+                border: '1px solid var(--border-light)',
+                borderRadius: '10px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontSize: '14px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
